@@ -1,0 +1,7 @@
+*.pyc
+*.err
+*.ascii
+python_sheet_expert_output/
+__*
+data/
+output/

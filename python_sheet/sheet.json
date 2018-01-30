@@ -1,0 +1,78 @@
+{
+    "frame_time": "0.04",
+    "frame_steps": "8",
+    "duration": "20",
+    "cloths":
+    [
+        {
+            "mesh": ".\/python_sheet\/sheet.obj",
+            "materials":
+            [
+                {
+                    "data": "materials\/camel-ponte-roma.json",
+                    "thicken": "2",
+                    "strain_limits":
+                    [
+                        "0.95",
+                        "1.05"
+                    ]
+                }
+            ],
+            "remeshing":
+            {
+                "refine_angle": "0.3",
+                "refine_compression": "0.01",
+                "refine_velocity": "1",
+                "size":
+                [
+                    "20e-3",
+                    "500e-3"
+                ],
+                "aspect_min": "0.2"
+            }
+        }
+    ],
+    "obstacles":
+    [
+        {
+            "mesh": ".\/python_sheet\/obstacle0.obj"
+        }
+    ],
+    "handles":
+    [
+        {
+            "nodes":
+            [
+                "0",
+                "55"
+            ]
+        }
+    ],
+    "gravity":
+    [
+        "0",
+        "0",
+        "-9.81"
+    ],
+    "wind":
+    {
+        "velocity":
+        [
+            "0",
+            "0",
+            "0"
+        ],
+        "density": "0",
+        "drag": "0"
+    },
+    "disable":
+    [
+        "popfilter"
+    ],
+    "magic":
+    {
+        "repulsion_thickness": "10e-3",
+        "collision_stiffness": "1e6"
+    },
+    "remeshing": "true"
+}
