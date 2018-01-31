@@ -273,6 +273,11 @@ class arcsim_expert:
             self.save_frame_image(path+'/%04i.png'%f)
         if depth:
             self.save_frame_depth_osmesa(path+"/%04i.flt"%f)
+            from util import flt2img
+            img = flt2img(path+"/%04i.flt"%f)
+            import cv2
+            cv2.imwrite(path+"/depth%04i.png"%f, img)
+            os.remove(path+"/%04i.flt"%f)
             #self.save_frame_depth(path+'/'+str(f)+".bmp")
         if vtk:
             self.save_frame_vtk(path,f)
