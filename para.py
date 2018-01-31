@@ -9,9 +9,10 @@ class para_dagger:
     def __init__(self):
         import time
         path = "./output/"+time.strftime("%y%m%d-%H%M%S")
-        if os.path.exists(path):
-            shutil.rmtree(path)
-        os.mkdir(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        
+        #os.mkidr("~/clothsim/result/"+time.strftime("%y%m%d-%H%M%S"))
         self.path = path
         pass
 
@@ -27,7 +28,7 @@ class para_dagger:
         script.write('#!/bin/bash\n')
         script.write('#SBATCH --job-name='+jobName+'\n')
         script.write('source activate cloth\n')
-        script.write('python clothsim.py '+'data'+'\n')
+        script.write('python clothsim.py '+'~/clothsim/result2/'+jobName+'\n')
         script.close()
         #execute script
         ret=subprocess.check_output(['sbatch',script_path])
@@ -39,12 +40,9 @@ class para_dagger:
             if ret[i].isdigit():
                 c=c+ret[i]
         return c
-    
-    def frame_path(self):
-        self.frame_id = self.frame_id + 1
-        return self.path+"/%04i"%(self.frame_id-1)
+
 
 if __name__=='__main__':
     dagger = para_dagger();
-    for i in range(5):
-        print(dagger.create_script('task'+str(i)))
+    for i in range(50):
+        print(dagger.create_script(str(i)))

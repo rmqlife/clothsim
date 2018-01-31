@@ -1,6 +1,7 @@
 from arcsim_expert_python import *
 from camera_transform import CameraTransform
 import sys,time
+from util import *
 
 def modify_expert_cam(expert):
     R = [ -2.4512346789053452e-02, 9.9968955285579986e-01,
@@ -63,8 +64,18 @@ class Handles:
             if valid==1:
                 break
         return handles
-
-
+    
+    def random_hands(self):
+        while True:
+            handles = self.init_handles.copy()
+            for i in range(handles.shape[0]):
+                handles[i,:] += self.noisen(x=0.1, n=3) 
+            valid = 1
+            valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
+            if valid==1:
+                break
+        return handles[:2]
+    
 if __name__== "__main__":
     cloth_x = 0.3
     cloth_y = 0.35
@@ -79,7 +90,7 @@ if __name__== "__main__":
     Handles = Handles(cloth_x=cloth_x, cloth_y=cloth_y, handles=handles)
     
     path = sys.argv[1]
-    delta = 0.03
+    delta = 0.01
     image_fag = True
     depth_fag = True
     vtk_fag = False
@@ -113,18 +124,24 @@ if __name__== "__main__":
     img_count=0
     
     handles = handles.tolist()
+    
+    tt_handles = np.array([])
+    tt_expert = np.array([])
     expert.set_handle(handles)
     expert.advance()
-    for i in range(2):#tt_handles.shape[0]):        
-        goal = Handles.random_handles()
+    for i in range(5):#tt_handles.shape[0]):        
+        hands = Handles.random_handles()[:2]
         expert.save_frame(path,img_count,image_fag,depth_fag,vtk_fag)
-        
-        for j in range(0,20):
+        for j in range(0,30):
             expert_pos = expert_func(handles,cloth_x,cloth_y)
+            handles = expert.apply_hand(handles,hands,delta)
             handles = expert.apply_expert(handles,expert_pos,delta)
-            handles = expert.apply_hand(handles,goal[:2],delta)
             expert.set_handle(handles)
             expert.advance()
             expert.save_frame(path,img_count,image_fag,depth_fag,vtk_fag)
             img_count=img_count+1
+            tt_handles = stack_vector(tt_handles, np.array(handles).reshape(-1,))
+            tt_expert = stack_vector(tt_expert, np.array(expert_pos).reshape(-1,))
+            np.savez(os.path.join(path,"data"),handles = tt_handles, expert  =tt_expert)
+            
 
