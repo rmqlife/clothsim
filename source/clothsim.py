@@ -3,14 +3,16 @@ from camera_transform import CameraTransform
 import sys,time
 from util import *
 
+
+
 def modify_expert_cam(expert):
-    R = [ -2.4512346789053452e-02, 9.9968955285579986e-01,
-    4.4657323994911069e-03, 6.8043109798842805e-01,
-    1.9956487329708672e-02, -7.3254027841731739e-01,
-    -7.3240198371191967e-01, -1.4917658141606671e-02,
-    -6.8070904043535008e-01 ]
-    t = [ 3.4787262116370329e-02, -1.1033486540439220e-01,
-    1.0847564970952182e+00 ]
+    R = [ 1.1787705693369732e-02, 9.9990175212015187e-01,
+       7.5852555353195794e-03, 7.1516001000053597e-01,
+       -3.1286601584672447e-03, -6.9895376927350883e-01,
+       -6.9886136686078104e-01, 1.3663732749963631e-02,
+       -7.1512662677096450e-01 ]
+    t = [ 6.2519535255385096e-04, -1.3248296586455230e-01,
+       1.0407258265155006e+00 ]
     R = np.array(R).reshape((3,3))
     t = np.array(t).reshape((3,1))
     cam = CameraTransform(R,t)
@@ -33,70 +35,107 @@ def modify_expert_cam(expert):
     #expert.lights=expert.lights+[LightSource([5,0,2],'color',[1,1,1])]
     return expert
 
+import numpy as np
 class Handles:
-    def __init__(self,cloth_x, cloth_y, handles, ext=0.03):
+    def __init__(self, cloth_x, cloth_y, handles, nx=[0.1,0.1,0.1], ext=0.1):
         self.cloth_x = cloth_x
         self.cloth_y = cloth_y
         self.init_handles = np.array(handles)
         self.ext = ext
+        self.nx = nx
+        pass
         
-    def noisen(self,x,n):
+    def noise3(self):
         from random import uniform
-        ret = np.zeros(n)
-        for i in range(n):
-            ret[i]=uniform(-x,x)
+        ret = np.zeros(3)
+        for i in range(3):
+            ret[0]=uniform(-self.nx[0],self.nx[0])
+        
         return ret
 
     def dist3d(self,p1,p2):
         return np.linalg.norm(np.subtract(p1,p2))
-
+    
+    def valid(self, handles):
+        valid = 1
+        valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
+        #valid &= self.dist3d(handles[2],handles[3])<self.cloth_x + self.ext
+        #valid &= self.dist3d(handles[0],handles[2])<self.cloth_y + self.ext
+        #valid &= self.dist3d(handles[1],handles[3])<self.cloth_y + self.ext
+        return valid==1
+        
     def random_handles(self):
         while True:
             handles = self.init_handles.copy()
             for i in range(handles.shape[0]):
-                handles[i,:] += self.noisen(x=0.1, n=3) 
-            valid = 1
-            valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
-            valid &= self.dist3d(handles[2],handles[3])<self.cloth_x + self.ext
-            valid &= self.dist3d(handles[0],handles[2])<self.cloth_y + self.ext
-            valid &= self.dist3d(handles[1],handles[3])<self.cloth_y + self.ext
+                handles[i,:] += self.noise3() 
+
             #print(self.dist3d(handles[0],handles[2]),valid)
-            if valid==1:
+            if self.valid(handles):
+                break
+        return handles
+    
+    def random_robot(self):
+        while True:
+            handles = self.init_handles.copy()
+            for i in range(2,4):
+                handles[i,:] += self.noise3()
+            if self.valid(handles):
                 break
         return handles
     
     def random_hands(self):
         while True:
             handles = self.init_handles.copy()
-            for i in range(handles.shape[0]):
-                handles[i,:] += self.noisen(x=0.1, n=3) 
-            valid = 1
-            valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
-            if valid==1:
+            for i in range(0,2):
+                handles[i,:] += self.noise3() 
+            if self.valid(handles):
                 break
-        return handles[:2]
+        return handles
     
+    def series(self,pos_num):
+        tt_handles = np.zeros((pos_num,4*3))
+        tt_handles[0,:] = np.array(handles).reshape(-1,)
+        print(pos_num)
+        for i in range(0,pos_num):
+            #print(tt_pos)
+            res = self.random_robot()
+            tt_handles[i,:] = res.reshape(-1,)
+        return tt_handles
+        
 if __name__== "__main__":
     cloth_x = 0.3
     cloth_y = 0.35
+
+    
     rr = [0.48943184,0.1678617,0.47914139]
     rl = [0.4918203,-0.11984081,0.47457296]
+    
+    hl = [0.54506982,-0.20150409, 0.09595238]
+    hr = [0.52955174, 0.13494965, 0.09382752]
+    robot_pos = np.load("robot_pos.npy")
+    rl = robot_pos[0,-3:]
+    rr = robot_pos[0,:3]
+    
+    #hl = rl+[0,0,-cloth_y]
+    #hr = rr+[0,0,-cloth_y]
 
-    hl = [0.55830802,-0.17057873,0.06070259]
-    hr = [0.54702463,0.16470575,0.01352225]
+    hl =  [0.65536936, -0.10399476, 0.27866456]
+    hr =  [0.60926911, 0.16645341, 0.30914943]
     robot_pos=[rl,rr]
     hands_pos=[hl,hr]
+    
     handles = np.array(hands_pos + robot_pos)
     Handles = Handles(cloth_x=cloth_x, cloth_y=cloth_y, handles=handles)
-    
+    print("init handles", handles)
     path = sys.argv[1]
-    delta = 0.01
+    delta = 0.015
     image_fag = True
     depth_fag = True
     vtk_fag = False
 
     expert = arcsim_expert()
-    expert_func = expert.expert_flat_close
+    expert_func = expert.expert_flat
     # change the camera configuration by real world parameters
     expert = modify_expert_cam(expert)
     
@@ -130,18 +169,19 @@ if __name__== "__main__":
     expert.set_handle(handles)
     expert.advance()
     for i in range(5):#tt_handles.shape[0]):        
-        hands = Handles.random_handles()[:2]
-        expert.save_frame(path,img_count,image_fag,depth_fag,vtk_fag)
-        for j in range(0,30):
+        rand_handles = Handles.random_handles()
+        hands = rand_handles[:2]
+        robot = rand_handles[-2:]
+        for j in range(0,20):
             expert_pos = expert_func(handles,cloth_x,cloth_y)
             handles = expert.apply_hand(handles,hands,delta)
-            handles = expert.apply_expert(handles,expert_pos,delta)
+            handles = expert.apply_expert(handles,robot,delta)
             expert.set_handle(handles)
             expert.advance()
             expert.save_frame(path,img_count,image_fag,depth_fag,vtk_fag)
             img_count=img_count+1
             tt_handles = stack_vector(tt_handles, np.array(handles).reshape(-1,))
             tt_expert = stack_vector(tt_expert, np.array(expert_pos).reshape(-1,))
-            np.savez(os.path.join(path,"data"),handles = tt_handles, expert  =tt_expert)
+            np.savez(os.path.join(path,"data"), handles = tt_handles, expert  =tt_expert)
             
 

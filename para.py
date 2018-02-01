@@ -5,8 +5,10 @@ import datetime
 import time
 import os, shutil
 import shutil
+import sys
+
 class para_dagger:
-    def __init__(self):
+    def __init__(self,result_dir):
         import time
         path = "./output/"+time.strftime("%y%m%d-%H%M%S")
         if not os.path.exists(path):
@@ -14,6 +16,10 @@ class para_dagger:
         
         #os.mkidr("~/clothsim/result/"+time.strftime("%y%m%d-%H%M%S"))
         self.path = path
+        self.result_dir = result_dir
+        if not os.path.exists(self.result_dir):
+            os.mkdir(self.result_dir)
+        shutil.copyfile('source/clothsim.py', os.path.join(result_dir,'clothsim.py'))
         pass
 
     def create_script(self,jobName):
@@ -21,6 +27,7 @@ class para_dagger:
         job_path=os.path.join(self.path, jobName)
         cwd=os.getcwd()
         shutil.copytree(os.path.join(cwd,'source'),job_path)
+        
         os.chdir(job_path)    
         
         script_path = 'script.sh'
@@ -28,7 +35,7 @@ class para_dagger:
         script.write('#!/bin/bash\n')
         script.write('#SBATCH --job-name='+jobName+'\n')
         script.write('source activate cloth\n')
-        script.write('python clothsim.py '+'~/clothsim/result2/'+jobName+'\n')
+        script.write('python clothsim.py '+os.path.join(self.result_dir, jobName)+'\n')
         script.close()
         #execute script
         ret=subprocess.check_output(['sbatch',script_path])
@@ -43,6 +50,6 @@ class para_dagger:
 
 
 if __name__=='__main__':
-    dagger = para_dagger();
+    dagger = para_dagger(sys.argv[1]);
     for i in range(50):
         print(dagger.create_script(str(i)))

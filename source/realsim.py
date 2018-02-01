@@ -1,15 +1,15 @@
 from arcsim_expert_python import *
 from camera_transform import CameraTransform
 import sys,time
-
+from util import *
 def modify_expert_cam(expert):
-    R = [ -2.4512346789053452e-02, 9.9968955285579986e-01,
-    4.4657323994911069e-03, 6.8043109798842805e-01,
-    1.9956487329708672e-02, -7.3254027841731739e-01,
-    -7.3240198371191967e-01, -1.4917658141606671e-02,
-    -6.8070904043535008e-01 ]
-    t = [ 3.4787262116370329e-02, -1.1033486540439220e-01,
-    1.0847564970952182e+00 ]
+    R = [ 1.1787705693369732e-02, 9.9990175212015187e-01,
+       7.5852555353195794e-03, 7.1516001000053597e-01,
+       -3.1286601584672447e-03, -6.9895376927350883e-01,
+       -6.9886136686078104e-01, 1.3663732749963631e-02,
+       -7.1512662677096450e-01 ]
+    t = [ 6.2519535255385096e-04, -1.3248296586455230e-01,
+       1.0407258265155006e+00 ]
     R = np.array(R).reshape((3,3))
     t = np.array(t).reshape((3,1))
     cam = CameraTransform(R,t)
@@ -44,11 +44,7 @@ def init_handles(hands_pos,robot_pos,cloth_x,cloth_y):
     #hands_pos=[[0.41399902,0.13384837,0.39804319], [0.42313311,-0.12751294,0.37715151]]
     
     
-    rr = [0.48943184,0.1678617,0.47914139]
-    rl = [0.4918203,-0.11984081,0.47457296]
-    
-    hl = [0.55830802,-0.17057873,0.06070259]
-    hr = [0.54702463,0.16470575,0.01352225]
+
     robot_pos=[hl,hr]
     hands_pos=[rl,rr]
 
@@ -90,8 +86,8 @@ if __name__== "__main__":
     #cloth_x, cloth_y,handles, hands_pos, robot_pos= init_handles(robot_all_pos[0,:])  
     cloth_x = 0.3
     cloth_y = 0.35
-    hl = [0.55830802,-0.17057873,0.06070259]
-    hr = [0.54702463,0.16470575,0.01352225]
+    hl = [0.54506982,-0.20150409,0.09595238]
+    hr =  [0.52955174,0.13494965,0.09382752]
     robot_pos=[robot_all_pos[0,-3:],robot_all_pos[0,:3]]
     hands_pos=[hl,hr]
     handles = hands_pos + robot_pos
@@ -128,10 +124,13 @@ if __name__== "__main__":
     if os.path.exists(path):
         shutil.rmtree(path)
     os.mkdir(path)
-
+    
+    tt_handles = np.array([])
+    tt_expert = np.array([])
     img_count=0
     expert.set_handle(handles)
     for i in range(0,robot_all_pos.shape[0],5):
+        expert_pos = expert_func(handles,cloth_x,cloth_y)
         #pick hand location
         #hands_pos = random_hands(cloth_x,cloth_y, hands_pos)
         print("hands_pos",hands_pos)
@@ -145,4 +144,7 @@ if __name__== "__main__":
         handles = hands_pos + robot_pos
         expert.set_handle(handles)
         expert.save_frame(path,i,image_fag,depth_fag,vtk_fag)
+        tt_expert = stack_vector(tt_expert, np.array(expert_pos).reshape(-1,))
+        tt_handles = stack_vector(tt_handles, np.array(handles).reshape(-1,))
         img_count=img_count+1
+        np.savez(os.path.join(path,"data"),handles = tt_handles, expert  =tt_expert)
