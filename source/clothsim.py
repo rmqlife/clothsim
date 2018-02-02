@@ -37,7 +37,7 @@ def modify_expert_cam(expert):
 
 import numpy as np
 class Handles:
-    def __init__(self, cloth_x, cloth_y, handles, nx=[0.1,0.1,0.1], ext=0.1):
+    def __init__(self, cloth_x, cloth_y, handles, nx=[0.2,0.2,0.2], ext=0.1):
         self.cloth_x = cloth_x
         self.cloth_y = cloth_y
         self.init_handles = np.array(handles)
@@ -59,7 +59,7 @@ class Handles:
     def valid(self, handles):
         valid = 1
         valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
-        #valid &= self.dist3d(handles[2],handles[3])<self.cloth_x + self.ext
+        valid &= self.dist3d(handles[2],handles[3])<self.cloth_x + self.ext
         #valid &= self.dist3d(handles[0],handles[2])<self.cloth_y + self.ext
         #valid &= self.dist3d(handles[1],handles[3])<self.cloth_y + self.ext
         return valid==1
@@ -125,17 +125,27 @@ if __name__== "__main__":
     robot_pos=[rl,rr]
     hands_pos=[hl,hr]
     
+    handles = np.array(hands_pos + robot_pos)    
+    bias = [0,-0.,0]
+    
     handles = np.array(hands_pos + robot_pos)
+    for i in range(handles.shape[0]):
+        handles[i]+=bias
+    
+
     Handles = Handles(cloth_x=cloth_x, cloth_y=cloth_y, handles=handles)
     print("init handles", handles)
     path = sys.argv[1]
-    delta = 0.015
+    delta = 0.02
     image_fag = True
     depth_fag = True
     vtk_fag = False
 
     expert = arcsim_expert()
     expert_func = expert.expert_flat
+    expert_func = expert.expert_twist
+    #expert_func = expert.expert_arc
+    
     # change the camera configuration by real world parameters
     expert = modify_expert_cam(expert)
     
@@ -168,11 +178,11 @@ if __name__== "__main__":
     tt_expert = np.array([])
     expert.set_handle(handles)
     expert.advance()
-    for i in range(5):#tt_handles.shape[0]):        
+    for i in range(40):#tt_handles.shape[0]):        
         rand_handles = Handles.random_handles()
         hands = rand_handles[:2]
         robot = rand_handles[-2:]
-        for j in range(0,20):
+        for j in range(0,5):
             expert_pos = expert_func(handles,cloth_x,cloth_y)
             handles = expert.apply_hand(handles,hands,delta)
             handles = expert.apply_expert(handles,robot,delta)
