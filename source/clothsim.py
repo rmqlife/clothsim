@@ -37,7 +37,7 @@ def modify_expert_cam(expert):
 
 import numpy as np
 class Handles:
-    def __init__(self, cloth_x, cloth_y, handles, nx=[0.2,0.2,0.2], ext=0.1):
+    def __init__(self, cloth_x, cloth_y, handles, nx=[0.3,0.3,0.3], ext=0.1):
         self.cloth_x = cloth_x
         self.cloth_y = cloth_y
         self.init_handles = np.array(handles)
@@ -49,7 +49,7 @@ class Handles:
         from random import uniform
         ret = np.zeros(3)
         for i in range(3):
-            ret[0]=uniform(-self.nx[0],self.nx[0])
+            ret[i]=uniform(-self.nx[i],self.nx[i])
         
         return ret
 
@@ -178,7 +178,7 @@ if __name__== "__main__":
     tt_expert = np.array([])
     expert.set_handle(handles)
     expert.advance()
-    for i in range(40):#tt_handles.shape[0]):        
+    for i in range(400):#tt_handles.shape[0]):        
         rand_handles = Handles.random_handles()
         hands = rand_handles[:2]
         robot = rand_handles[-2:]

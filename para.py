@@ -33,7 +33,7 @@ class para_dagger:
         script_path = 'script.sh'
         script=open(script_path,'w')
         script.write('#!/bin/bash\n')
-        script.write('#SBATCH --job-name='+jobName+'\n')
+        script.write('#SBATCH --job-name={jobName} --time={time}\n'.format(jobName=jobName, time=24*60))
         script.write('source activate cloth\n')
         script.write('python clothsim.py '+os.path.join(self.result_dir, jobName)+'\n')
         script.close()
@@ -52,4 +52,4 @@ class para_dagger:
 if __name__=='__main__':
     dagger = para_dagger(sys.argv[1]);
     for i in range(50):
-        print(dagger.create_script(str(i)))
+        print(dagger.create_script(jobName=str(i)))
