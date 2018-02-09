@@ -1,4 +1,5 @@
 from merge_dataset import *
+import cv2
 
 def build_depth_feature(home,filename,target_size = (64,64)):
     tt_depth = np.array([])
