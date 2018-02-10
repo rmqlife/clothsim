@@ -37,7 +37,7 @@ def modify_expert_cam(expert):
 
 import numpy as np
 class Handles:
-    def __init__(self, cloth_x, cloth_y, handles, nx=[0.3,0.3,0.3], ext=0.1):
+    def __init__(self, cloth_x, cloth_y, handles, nx=[0.2,0.2,0.2], ext=0.1):
         self.cloth_x = cloth_x
         self.cloth_y = cloth_y
         self.init_handles = np.array(handles)
@@ -60,7 +60,8 @@ class Handles:
         valid = 1
         valid &= self.dist3d(handles[0],handles[1])<self.cloth_x + self.ext
         valid &= self.dist3d(handles[2],handles[3])<self.cloth_x + self.ext
-        #valid &= self.dist3d(handles[0],handles[2])<self.cloth_y + self.ext
+        valid &= handles[0][1]<handles[1][1]
+        valid &= handles[2][1]<handles[3][1]
         #valid &= self.dist3d(handles[1],handles[3])<self.cloth_y + self.ext
         return valid==1
         
@@ -178,7 +179,7 @@ if __name__== "__main__":
     tt_expert = np.array([])
     expert.set_handle(handles)
     expert.advance()
-    for i in range(400):#tt_handles.shape[0]):        
+    for i in range(200):#tt_handles.shape[0]):        
         rand_handles = Handles.random_handles()
         hands = rand_handles[:2]
         robot = rand_handles[-2:]
@@ -193,5 +194,3 @@ if __name__== "__main__":
             tt_handles = stack_vector(tt_handles, np.array(handles).reshape(-1,))
             tt_expert = stack_vector(tt_expert, np.array(expert_pos).reshape(-1,))
             np.savez(os.path.join(path,"data"), handles = tt_handles, expert  =tt_expert)
-            
-
