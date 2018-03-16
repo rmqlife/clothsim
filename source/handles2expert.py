@@ -4,7 +4,7 @@ from util import *
 
 if __name__== "__main__":
     cloth_x = 0.3
-    cloth_y = 0.35
+    cloth_y = 0.3
 
     path = sys.argv[1]
     expert = arcsim_expert()

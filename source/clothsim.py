@@ -37,7 +37,7 @@ def modify_expert_cam(expert):
 
 import numpy as np
 class Handles:
-    def __init__(self, cloth_x, cloth_y, handles, nx=[0.2,0.2,0.2], ext=0.1):
+    def __init__(self, cloth_x, cloth_y, handles, nx=[0.1,0.1,0.1], ext=0.1):
         self.cloth_x = cloth_x
         self.cloth_y = cloth_y
         self.init_handles = np.array(handles)
@@ -68,8 +68,15 @@ class Handles:
     def random_handles(self):
         while True:
             handles = self.init_handles.copy()
-            for i in range(handles.shape[0]):
-                handles[i,:] += self.noise3() 
+            #for i in range(handles.shape[0]):
+            n1 = self.noise3() 
+            n2 = self.noise3()
+            n3 = self.noise3()
+            n4 = self.noise3()
+            handles[1,:] += n1
+            handles[0,:] += n1
+            handles[2,:] += n4
+            handles[3,:] += n4
 
             #print(self.dist3d(handles[0],handles[2]),valid)
             if self.valid(handles):
@@ -103,7 +110,13 @@ class Handles:
             res = self.random_robot()
             tt_handles[i,:] = res.reshape(-1,)
         return tt_handles
-        
+
+
+def add_bg(im,bg):
+    mask = (im==0).astype('bool')
+    #res = cv2.bitwise_and(bg,bg,mask=mask)
+    return bg*mask+im
+    
 if __name__== "__main__":
     cloth_x = 0.3
     cloth_y = 0.35
@@ -123,6 +136,11 @@ if __name__== "__main__":
 
     hl =  [0.65536936, -0.10399476, 0.27866456]
     hr =  [0.60926911, 0.16645341, 0.30914943]
+    
+    hl =  [0.65536936, -0.15, 0.27866456]
+    hr =  [0.60926911, 0.15, 0.30914943]
+    rr = [0.48943184,0.15,0.47914139]
+    rl = [0.4918203,-0.15,0.47457296]
     robot_pos=[rl,rr]
     hands_pos=[hl,hr]
     
@@ -145,8 +163,8 @@ if __name__== "__main__":
     expert = arcsim_expert()
     expert_func = expert.expert_flat
     expert_func = expert.expert_twist
-    #expert_func = expert.expert_arc
-    
+    # expert_func = expert.expert_arc
+    expert_func = expert.expert_flat
     # change the camera configuration by real world parameters
     expert = modify_expert_cam(expert)
     
@@ -177,20 +195,33 @@ if __name__== "__main__":
     
     tt_handles = np.array([])
     tt_expert = np.array([])
+    tt_depth = np.array([])
+    target_size = (64,64)
+    bg = cv2.imread('bg.png',cv2.IMREAD_ANYDEPTH)
+    
+
     expert.set_handle(handles)
     expert.advance()
-    for i in range(200):#tt_handles.shape[0]):        
+    for i in range(1):#tt_handles.shape[0]):        
         rand_handles = Handles.random_handles()
+	rand_handles = handles
         hands = rand_handles[:2]
         robot = rand_handles[-2:]
-        for j in range(0,5):
+        for j in range(0,50):
             expert_pos = expert_func(handles,cloth_x,cloth_y)
             handles = expert.apply_hand(handles,hands,delta)
-            handles = expert.apply_expert(handles,robot,delta)
+            handles = expert.apply_expert(handles,expert_pos,delta)
             expert.set_handle(handles)
             expert.advance()
             expert.save_frame(path,img_count,image_fag,depth_fag,vtk_fag)
+            fn = path+"/depth%04i.png"%img_count
+            d = cv2.imread(fn,cv2.IMREAD_ANYDEPTH)
+            d = add_bg(d,bg)
+            d = cv2.resize(d, target_size)
+            d = d.reshape(-1,)
+            tt_depth = stack_vector(tt_depth,d)
+            
             img_count=img_count+1
             tt_handles = stack_vector(tt_handles, np.array(handles).reshape(-1,))
             tt_expert = stack_vector(tt_expert, np.array(expert_pos).reshape(-1,))
-            np.savez(os.path.join(path,"data"), handles = tt_handles, expert  =tt_expert)
+            np.savez(os.path.join(path,"data"), handles = tt_handles, expert  =tt_expert, depth=tt_depth)
